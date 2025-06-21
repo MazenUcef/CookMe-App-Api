@@ -6,6 +6,7 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
 import * as schema from './modals/Schema';
 import favRoutes from './routes/FavRoutes'
+import job from './utils/corn';
 
 
 
@@ -21,6 +22,9 @@ if (!process.env.PORT) {
 }
 
 const PORT = process.env.PORT || 5001;
+
+job.start()
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
