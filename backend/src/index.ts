@@ -6,6 +6,7 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
 import * as schema from './modals/Schema';
 import favRoutes from './routes/FavRoutes'
+import authRoutes from './routes/AuthRoutes'
 import job from './utils/corn';
 
 
@@ -34,6 +35,7 @@ const sql = neon(process.env.DATABASE_URL as string);
 export const db = drizzle(sql, { schema })
 
 app.use('/api/favorites', favRoutes)
+app.use('/api/auth', authRoutes)
 app.get('/api/health', (req: Request, res: Response) => {
     res.status(200).json({ message: 'Server is healthy' });
 })
