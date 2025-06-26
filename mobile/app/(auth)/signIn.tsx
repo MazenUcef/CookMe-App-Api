@@ -1,4 +1,3 @@
-import { useSignIn } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -16,6 +15,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { COLORS } from "../../constants/colors";
+import { useAuthRedirect, useSignIn } from "@/api/Auth";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 
 
@@ -23,44 +24,25 @@ const { height } = Dimensions.get('window')
 
 const SignInScreen = () => {
     const router = useRouter();
-
-    const { signIn, setActive, isLoaded } = useSignIn();
-
+    const { accessToken, signin, user, isLoading, error, refreshToken } = useSignIn()
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
-    const [loading, setLoading] = useState(false);
+    useAuthRedirect()
 
 
 
-    
+
     const handleSignIn = async () => {
         if (!email || !password) {
             Alert.alert("Error", "Please fill in all fields");
             return;
         }
-
-        if (!isLoaded) return;
-
-        setLoading(true);
-
         try {
-            const signInAttempt = await signIn.create({
-                identifier: email,
-                password,
-            });
-
-            if (signInAttempt.status === "complete") {
-                await setActive({ session: signInAttempt.createdSessionId });
-            } else {
-                Alert.alert("Error", "Sign in failed. Please try again.");
-                console.error(JSON.stringify(signInAttempt, null, 2));
-            }
+            await signin(email, password);
+            router.replace('/');
         } catch (err: any) {
-            Alert.alert("Error", err.errors?.[0]?.message || "Sign in failed");
-            console.error(JSON.stringify(err, null, 2));
-        } finally {
-            setLoading(false);
+            Alert.alert("Error", error || "Sign in failed");
         }
     };
 
@@ -124,12 +106,12 @@ const SignInScreen = () => {
                         </View>
 
                         <TouchableOpacity
-                            style={[authStyles.authButton, loading && authStyles.buttonDisabled]}
+                            style={[authStyles.authButton, isLoading && authStyles.buttonDisabled]}
                             onPress={handleSignIn}
-                            disabled={loading}
+                            disabled={isLoading}
                             activeOpacity={0.8}
                         >
-                            <Text style={authStyles.buttonText}>{loading ? "Signing In..." : "Sign In"}</Text>
+                            <Text style={authStyles.buttonText}>{isLoading ? "Signing In..." : "Sign In"}</Text>
                         </TouchableOpacity>
 
                         {/* Sign Up Link */}

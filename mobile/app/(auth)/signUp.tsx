@@ -11,12 +11,12 @@ import {
     Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useSignUp } from "@clerk/clerk-expo";
 import { useState } from "react";
 import { Image } from "expo-image";
 import { COLORS } from "../../constants/colors";
 import { Ionicons } from "@expo/vector-icons";
-import VerifyEmail from "./verifyEmail";
+import { useAuthRedirect, useSignUp } from "@/api/Auth";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 
 const { height } = Dimensions.get('window')
@@ -24,37 +24,24 @@ const { height } = Dimensions.get('window')
 
 const SignUpScreen = () => {
     const router = useRouter();
-    const { isLoaded, signUp } = useSignUp();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [pendingVerification, setPendingVerification] = useState(false);
+    const { accessToken, signup, user, isLoading, error, refreshToken } = useSignUp()
+    useAuthRedirect()
 
     const handleSignUp = async () => {
-        if (!email || !password) return Alert.alert("Error", "Please fill in all fields");
-        if (password.length < 6) return Alert.alert("Error", "Password must be at least 6 characters");
-
-        if (!isLoaded) return;
-
-        setLoading(true);
-
-        try {
-            await signUp.create({ emailAddress: email, password });
-
-            await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-
-            setPendingVerification(true);
-        } catch (err: any) {
-            Alert.alert("Error", err.errors?.[0]?.message || "Failed to create account");
-            console.error(JSON.stringify(err, null, 2));
-        } finally {
-            setLoading(false);
+        if (!email || !password) {
+            Alert.alert("Error", "Please fill in all fields");
+            return;
         }
+        try {
+            await signup(email, password)
+        } catch (err) {
+            Alert.alert("Error", error || "Sign up failed")
+        }
+        router.push('/(auth)/signIn')
     };
-
-    if (pendingVerification)
-        return <VerifyEmail email={email} onBack={() => setPendingVerification(false)} />;
 
     return (
         <View style={authStyles.container}>
@@ -117,13 +104,13 @@ const SignUpScreen = () => {
 
                         {/* Sign Up Button */}
                         <TouchableOpacity
-                            style={[authStyles.authButton, loading && authStyles.buttonDisabled]}
+                            style={[authStyles.authButton, isLoading && authStyles.buttonDisabled]}
                             onPress={handleSignUp}
-                            disabled={loading}
+                            disabled={isLoading}
                             activeOpacity={0.8}
                         >
                             <Text style={authStyles.buttonText}>
-                                {loading ? "Creating Account..." : "Sign Up"}
+                                {isLoading ? "Creating Account..." : "Sign Up"}
                             </Text>
                         </TouchableOpacity>
 

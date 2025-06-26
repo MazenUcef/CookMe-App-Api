@@ -50,7 +50,7 @@ const AddToFavorites = async (req: Request, res: Response) => {
 const DeleteFromFavorites = async (req: Request, res: Response) => {
     try {
         const { userId, recipeId } = req.params;
-        const deletedFavorites = await db.delete(favoritesTable)
+        await db.delete(favoritesTable)
             .where(
                 and(
                     eq(favoritesTable.userId, userId),

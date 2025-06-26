@@ -1,10 +1,13 @@
+import { RootState } from "@/store";
 import { Redirect, Stack } from "expo-router";
-import { useAuth } from "@clerk/clerk-expo";
+import { useSelector } from "react-redux";
 
 export default function AuthRoutesLayout() {
-    const { isSignedIn } = useAuth();
+    const { accessToken, refreshToken } = useSelector((state: RootState) => state.auth);
 
-    if (isSignedIn) return <Redirect href={"/"} />;
+    if (accessToken && refreshToken) {
+        return <Redirect href="/" />;
+    }
 
     return <Stack screenOptions={{ headerShown: false }} />;
 }

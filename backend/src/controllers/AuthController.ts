@@ -141,7 +141,7 @@ const SignIn = async (req: Request, res: Response) => {
 
 const refreshToken = async (req: Request, res: Response) => {
     try {
-        // Get refresh token from either cookies or body
+
         const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
         if (!refreshToken) {
@@ -149,10 +149,10 @@ const refreshToken = async (req: Request, res: Response) => {
             return
         }
 
-        // Verify refresh token
+
         const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string) as { userId: string };
 
-        // Find user
+
         const [user] = await db.select().from(usersTable)
             .where(eq(usersTable.id, Number(decoded.userId)));
 
@@ -161,14 +161,13 @@ const refreshToken = async (req: Request, res: Response) => {
             return
         }
 
-        // Generate new access token
         const newAccessToken = jwt.sign(
             { userId: user.id, email: user.email },
             process.env.JWT_SECRET as string,
             { expiresIn: '15m' }
         );
 
-        // Set new access token cookie (optional)
+
         res.cookie('accessToken', newAccessToken, cookieOptions);
 
         res.status(200).json({
@@ -183,16 +182,15 @@ const refreshToken = async (req: Request, res: Response) => {
 
 const SignOut = async (req: Request, res: Response) => {
     try {
-        const userId = req.user?.userId; // Assuming you have middleware that adds user to request
+        const userId = req.user?.userId;
 
         if (userId) {
-            // Clear refresh token from database
             await db.update(usersTable)
                 .set({ refreshToken: null })
                 .where(eq(usersTable.id, userId));
         }
 
-        // Clear cookies (optional)
+
         res.clearCookie('accessToken');
         res.clearCookie('refreshToken');
 
