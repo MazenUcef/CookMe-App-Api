@@ -3,14 +3,17 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 
 export interface FavoriteRecipe {
+    recipeId: number;  // This should match the 'id' expected by RecipeCard
     userId: string;
-    recipeId: string;
     title: string;
     image: string;
-    cookTime: string;
-    servings: number
+    // Add other required Recipe properties
+    cookTime?: string;
+    servings?: number;
+    area?: string;
+    description?: string;
+    // ... other properties as needed
 }
-
 interface FavoritesState {
     favorites: FavoriteRecipe[];
     isLoading: boolean;
@@ -43,7 +46,8 @@ const favoritesSlice = createSlice({
             state.favorites.push(action.payload);
             state.error = null;
         },
-        removeFavorite: (state, action: PayloadAction<{ userId: string; recipeId: string }>) => {
+        // In favoritesSlice.ts
+        removeFavorite: (state, action: PayloadAction<{ userId: string; recipeId: number }>) => {
             state.favorites = state.favorites.filter(
                 fav => !(fav.userId === action.payload.userId && fav.recipeId === action.payload.recipeId)
             );

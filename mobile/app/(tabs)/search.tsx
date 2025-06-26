@@ -114,7 +114,7 @@ export default function search() {
             {loading ?
                 (
                     <View style={styles.loadingContainer}>
-                        <LoadingSpinner />
+                        <LoadingSpinner message='Loading recipes...' size={'small'} />
                     </View>
                 )
                 :

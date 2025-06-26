@@ -9,14 +9,19 @@ import { Ionicons } from '@expo/vector-icons';
 const { width } = Dimensions.get("window");
 const cardWidth = (width - 48) / 2;
 
-type Recipe = {
+interface Recipe {
     id: string;
     title: string;
     image: string;
     cookTime?: string;
-    servings?: string;
+    servings?: number;  // Changed from string to number
     area?: string;
     description?: string;
+    // Add other properties that transformMealData returns if you need them
+    category?: string;
+    ingredients?: string[];
+    instructions?: string[];
+    originalData?: any;
 };
 
 type RecipeCardProps = {

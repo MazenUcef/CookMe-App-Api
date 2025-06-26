@@ -22,23 +22,36 @@ export default function favorites() {
     useEffect(() => {
         const loadFavorites = async () => {
             try {
+                // Ensure recipeId is treated as number consistently
                 const transformedFavorites = favorites.map(favorite => ({
                     ...favorite,
-                    id: favorite.recipeId
-                }))
-                setFavoriteRecipes(transformedFavorites)
+                    id: favorite.recipeId.toString(), // For RecipeCard compatibility
+                    recipeId: favorite.recipeId, // Original number ID
+                    userId: favorite.userId,
+                    title: favorite.title,
+                    image: favorite.image,
+                    cookTime: favorite.cookTime,
+                    servings: favorite.servings,
+                    area: favorite.area,
+                    description: favorite.description,
+                }));
+                setFavoriteRecipes(transformedFavorites);
             } catch (error) {
-                Alert.alert("Error", "Failed to load Favorites")
+                Alert.alert("Error", "Failed to load Favorites");
             }
-        }
-        loadFavorites()
-    }, [user?.id])
+        };
+
+        if (user?.id) loadFavorites();
+    }, [favorites, user?.id]);
 
     const handleSignOut = async () => {
-        await signout()
+        Alert.alert("Logout", "Are you sure you want to logout", [
+            { text: "Cancel", style: "cancel" },
+            { text: "Logout", style: "destructive", onPress: signout },
+        ])
     }
 
-    if (isLoading) return <LoadingSpinner />
+    if (isLoading) return <LoadingSpinner message='Loading your favorites' />
     return (
         <View style={styles.container}>
             <ScrollView
@@ -57,8 +70,20 @@ export default function favorites() {
                 <View style={styles.recipesSection}>
                     <FlatList
                         data={favoriteRecipes}
-                        renderItem={({ item }) => <RecipeCard recipe={item} />}
-                        keyExtractor={(item) => item.userId.toString()}
+                        renderItem={({ item }) => (
+                            <RecipeCard
+                                recipe={{
+                                    id: item.recipeId.toString(),
+                                    title: item.title,
+                                    image: item.image,
+                                    cookTime: item.cookTime,
+                                    servings: item.servings,
+                                    area: item.area,
+                                    description: item.description
+                                }}
+                            />
+                        )}
+                        keyExtractor={(item) => item.recipeId.toString()}
                         numColumns={2}
                         columnWrapperStyle={styles.row}
                         contentContainerStyle={styles.recipesGrid}

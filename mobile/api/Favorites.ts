@@ -81,13 +81,22 @@ export const useRemoveFromFavorites = () => {
     const removeFromFavorites = async (userId: string, recipeId: number) => {
         dispatch(setFavoritesLoading(true));
         try {
-            await axios.delete(`https://cookme-app-api.onrender.com/api/favorites/${userId}/${recipeId}`);
-            dispatch(removeFavorite({ userId, recipeId: recipeId.toString() }));
-            dispatch(setFavoritesLoading(false));
+            const res = await axios.delete(`https://cookme-app-api.onrender.com/api/favorites/${userId}/${recipeId}`);
+
+            // Only update Redux state if API call was successful
+            if (res.status === 200) {
+                dispatch(removeFavorite({
+                    userId,
+                    recipeId
+                }));
+            }
+
+            return true;
         } catch (error: any) {
             dispatch(setFavoritesError(error.response?.data?.message || 'Failed to remove from favorites'));
-            dispatch(setFavoritesLoading(false));
             throw error;
+        } finally {
+            dispatch(setFavoritesLoading(false));
         }
     };
 
