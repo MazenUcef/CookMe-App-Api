@@ -50,16 +50,25 @@ const AddToFavorites = async (req: Request, res: Response) => {
 const DeleteFromFavorites = async (req: Request, res: Response) => {
     try {
         const { userId, recipeId } = req.params;
-        await db.delete(favoritesTable)
+        const deleted = await db.delete(favoritesTable)
             .where(
                 and(
                     eq(favoritesTable.userId, userId),
                     eq(favoritesTable.recipeId, parseInt(recipeId))
                 )
             )
+            .returning(); // Add this to get the deleted record
+
+        if (deleted.length === 0) {
+            return res.status(404).json({
+                message: "Favorite not found",
+            });
+        }
+
         res.status(200).json({
             message: "Recipe removed from favorites successfully",
-        })
+            data: deleted[0] // Return the deleted record
+        });
     } catch (error) {
         console.error("Error deleting from favorites:", error);
         res.status(500).json({

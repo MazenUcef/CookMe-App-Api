@@ -10,6 +10,7 @@ import { COLORS } from '@/constants/colors'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
+import { WebView } from 'react-native-webview'
 
 type Recipe = {
     youtubeUrl: string | null
@@ -36,6 +37,7 @@ export default function RecipeDetailScreen() {
     const { favorites } = useSelector((state: RootState) => state.favorites)
     const { removeFromFavorites } = useRemoveFromFavorites()
     const { addToFavorites } = useAddToFavorites()
+    const { getFavorites } = useGetFavorites()
 
     useEffect(() => {
         const checkIfSaved = async () => {
@@ -75,8 +77,14 @@ export default function RecipeDetailScreen() {
 
 
     const getYoutubeEmbeUrl = (url: string) => {
-        const videoId = url.split("v=")[1]
-        return `https://youtube.com/embed/${videoId}`
+        // Handle both full URLs and shortened youtu.be URLs
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+        const match = url.match(regExp);
+        const videoId = (match && match[2].length === 11) ? match[2] : null;
+
+        if (!videoId) return url; // fallback to original URL if extraction fails
+
+        return `https://www.youtube.com/embed/${videoId}?rel=0&autoplay=0&showinfo=0&controls=1`;
     }
 
     // Update the handleToggleSave function
@@ -95,6 +103,7 @@ export default function RecipeDetailScreen() {
 
             if (isSaved) {
                 await removeFromFavorites(user.id, numericRecipeId);
+                await getFavorites(user.id)
                 setIsSaved(false);
                 Alert.alert("Success", "Removed from favorites");
             } else {
@@ -108,6 +117,7 @@ export default function RecipeDetailScreen() {
                     recipe.cookTime ? (parseInt(recipe.cookTime.replace(/\D/g, '')) || 0) : 0,
                     recipe.servings || 1
                 );
+                await getFavorites(user.id)
                 setIsSaved(true);
                 Alert.alert("Success", "Added to favorites");
             }
@@ -121,6 +131,7 @@ export default function RecipeDetailScreen() {
 
 
     if (loading) return <LoadingSpinner message='Loading recipe details...' />;
+    console.log(recipe?.youtubeUrl);
 
     return (
         <View style={styles.container}>
@@ -151,7 +162,7 @@ export default function RecipeDetailScreen() {
                         <TouchableOpacity
                             style={[
                                 styles.floatingButton,
-                                { backgroundColor: isSaving ? COLORS.white : COLORS.primary },
+                                { backgroundColor: isSaving ? COLORS.primary : COLORS.primary },
                             ]}
                             onPress={handleToggleSave}
                             disabled={isSaving}
@@ -163,8 +174,179 @@ export default function RecipeDetailScreen() {
                             />
                         </TouchableOpacity>
                     </View>
+                    <View style={styles.titleSection}>
+                        <View style={styles.categoryBadge}>
+                            <Text style={styles.categoryText}>{recipe?.category}</Text>
+                        </View>
+                        <Text style={styles.recipeTitle}>{recipe?.title}</Text>
+                        {
+                            recipe?.area && (
+                                <View style={styles.locationRow}>
+                                    <Ionicons
+                                        name='location'
+                                        size={16}
+                                        color={COLORS.white}
+                                    />
+                                    <Text style={styles.locationText}>Cuisine</Text>
+                                </View>
+                            )
+                        }
+                    </View>
 
                 </View>
+                <View style={styles.contentSection}>
+                    <View style={styles.statsContainer}>
+                        <View style={styles.statCard}>
+                            <LinearGradient
+                                colors={["#FF6868", "#FF8E53"]}
+                                style={styles.statIconContainer}
+                            >
+                                <Ionicons
+                                    name='time'
+                                    size={20}
+                                    color={COLORS.white}
+                                />
+                            </LinearGradient>
+                            <Text style={styles.statValue}>{recipe?.cookTime}</Text>
+                            <Text style={styles.statLabel}>Prep Time</Text>
+                        </View>
+                        <View style={styles.statCard}>
+                            <LinearGradient
+                                colors={["#4ECDC4", "#44A08D"]}
+                                style={styles.statIconContainer}
+                            >
+                                <Ionicons
+                                    name='people'
+                                    size={20}
+                                    color={COLORS.white}
+                                />
+                            </LinearGradient>
+                            <Text style={styles.statValue}>{recipe?.servings}</Text>
+                            <Text style={styles.statLabel}>Servings</Text>
+                        </View>
+                    </View>
+
+                    {recipe?.youtubeUrl && (
+                        <View style={styles.sectionContainer}>
+                            <View style={styles.sectionTitleRow}>
+                                <LinearGradient
+                                    colors={["#FF0000", "#CC0000"]}
+                                    style={styles.sectionIcon}
+                                >
+                                    <Ionicons
+                                        name='play'
+                                        size={16}
+                                        color={COLORS.white}
+                                    />
+                                </LinearGradient>
+
+                                <Text style={styles.sectionTitle}>
+                                    Video Tutorial
+                                </Text>
+                            </View>
+                            <View style={styles.webviewContainer}>
+                                <WebView
+                                    style={styles.webview}
+                                    javaScriptEnabled={true}
+                                    domStorageEnabled={true}
+                                    source={{ uri: getYoutubeEmbeUrl(recipe.youtubeUrl) }}
+                                    allowsFullscreenVideo={true}
+                                    allowsInlineMediaPlayback={true}
+                                />
+                            </View>
+                        </View>
+                    )}
+
+                    <View style={styles.sectionContainer}>
+                        <View style={styles.sectionTitleRow}>
+                            <LinearGradient
+                                colors={[COLORS.primary, COLORS.primary + "80"]}
+                                style={styles.sectionIcon}
+                            >
+                                <Ionicons
+                                    name='list'
+                                    size={16}
+                                    color={COLORS.white}
+                                />
+                            </LinearGradient>
+                            <Text style={styles.sectionTitle}>Ingredients</Text>
+                            <View style={styles.countBadge}>
+                                <Text style={styles.countText}>{recipe?.ingredients?.length}</Text>
+                            </View>
+                        </View>
+                        <View style={styles.ingredientsGrid}>
+                            {recipe?.ingredients?.map((ingredient, index) => (
+                                <View key={index} style={styles.ingredientCard}>
+                                    <View style={styles.ingredientNumber}>
+                                        <Text style={styles.ingredientText}>
+                                            {index + 1}
+                                        </Text>
+                                    </View>
+                                    <Text style={styles.ingredientText}>{ingredient}</Text>
+                                    <View style={styles.ingredientCheck}>
+                                        <Ionicons
+                                            name='checkmark-circle-outline'
+                                            size={20}
+                                            color={COLORS.textLight}
+                                        />
+                                    </View>
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+
+                    <View style={styles.sectionContainer}>
+                        <View style={styles.sectionTitleRow}>
+                            <LinearGradient
+                                colors={["#9C27B0", "#673AB7"]}
+                                style={styles.sectionIcon}
+                            >
+                                <Ionicons name="book" size={16} color={COLORS.white} />
+                            </LinearGradient>
+                            <Text style={styles.sectionTitle}>Instructions</Text>
+                            <View style={styles.countBadge}>
+                                <Text style={styles.countText}>{recipe?.instructions.length}</Text>
+                            </View>
+                        </View>
+                        <View style={styles.instructionsContainer}>
+                            {recipe?.instructions.map((instruction: any, index: any) => (
+                                <View key={index} style={styles.instructionCard}>
+                                    <LinearGradient
+                                        colors={[COLORS.primary, COLORS.primary + "CC"]}
+                                        style={styles.stepIndicator}
+                                    >
+                                        <Text style={styles.stepNumber}>{index + 1}</Text>
+                                    </LinearGradient>
+                                    <View style={styles.instructionContent}>
+                                        <Text style={styles.instructionText}>{instruction}</Text>
+                                        <View style={styles.instructionFooter}>
+                                            <Text style={styles.stepLabel}>Step {index + 1}</Text>
+                                            <TouchableOpacity style={styles.completeButton}>
+                                                <Ionicons name="checkmark" size={16} color={COLORS.primary} />
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+                    <TouchableOpacity
+                        style={styles.primaryButton}
+                        onPress={handleToggleSave}
+                        disabled={isSaving}
+                    >
+                        <LinearGradient
+                            colors={[COLORS.primary, COLORS.primary + "CC"]}
+                            style={styles.buttonGradient}
+                        >
+                            <Ionicons name="heart" size={20} color={COLORS.white} />
+                            <Text style={styles.buttonText}>
+                                {isSaved ? "Remove from Favorites" : "Add to Favorites"}
+                            </Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                </View>
+
             </ScrollView>
         </View>
     )
@@ -346,6 +528,12 @@ export const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 8,
         elevation: 4,
+    },
+    webviewContainer: {
+        height: 220, // Fixed height or calculate based on aspect ratio
+        marginTop: 10,
+        borderRadius: 12,
+        overflow: 'hidden',
     },
     webview: {
         flex: 1,

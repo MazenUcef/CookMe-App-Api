@@ -9,14 +9,22 @@ import { Ionicons } from '@expo/vector-icons'
 import RecipeCard from '@/components/RecipeCard'
 import NoFavoritesFound from '@/components/NoFavoritesFound'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import { useGetFavorites } from '@/api/Favorites'
 
 
 export default function favorites() {
     const { signout } = useSignOut()
     const { user } = useSelector((state: RootState) => state.auth)
-    const { favorites, isLoading } = useSelector((state: RootState) => state.favorites)
-
+    const { favorites: FavRedux, isLoading } = useSelector((state: RootState) => state.favorites)
+    const { getFavorites, favorites } = useGetFavorites()
     const [favoriteRecipes, setFavoriteRecipes] = useState<FavoriteRecipe[]>([]);
+
+    useEffect(() => {
+        if (user?.id) {
+            getFavorites(user.id);
+        }
+    }, [user?.id])
+    console.log("favorrites", favorites);
 
 
     useEffect(() => {
@@ -66,6 +74,11 @@ export default function favorites() {
                         <Ionicons size={22} color={COLORS.text} name='log-out-outline' />
                     </TouchableOpacity>
                 </View>
+                <TouchableOpacity
+                    onPress={signout}
+                >
+                    <Text>signout</Text>
+                </TouchableOpacity>
 
                 <View style={styles.recipesSection}>
                     <FlatList
